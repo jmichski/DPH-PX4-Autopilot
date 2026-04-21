@@ -1874,6 +1874,72 @@ void Commander::run()
 
 	arm_auth_init(&_mavlink_log_pub, &_vehicle_status.system_id);
 
+	// -------------------------------------------------------------------------
+	// Airogistic DPH — Read all parameter filename and version params at boot.
+	// Marks params as 'used' so QGroundControl receives them via MAVLink.
+	//
+	// Filename convention:
+	//   AIRO_<platform>_<imu_sw>_<veh_cfg>_<mot_cfg>_<status>_V<n>_S<n>_v<M>_<m>_<v>.params
+	//   Example: AIRO_X500_PX4_STD_QUAD_PRO_V2_S3_v1_0_0.params
+	//
+	// NAME1 = prefix "AIRO" (0x4149524F)
+	// NAME2 = platform e.g. "X500" (0x58353030)
+	// ASCII decode: int.to_bytes(4,'big').decode('ascii').rstrip()
+	// -------------------------------------------------------------------------
+	{
+		int32_t dph_name1    = 0;
+		int32_t dph_name2    = 0;
+		int32_t dph_major    = 0;
+		int32_t dph_minor    = 0;
+		int32_t dph_vehicle  = 0;
+		int32_t dph_imu_sw   = 0;
+		int32_t dph_veh_cfg  = 0;
+		int32_t dph_mot_cfg  = 0;
+		int32_t dph_file_st  = 0;
+
+		param_get(param_find("DPH_CFG_NAME1"),    &dph_name1);
+		param_get(param_find("DPH_CFG_NAME2"),    &dph_name2);
+		param_get(param_find("DPH_VER_MAJOR"),    &dph_major);
+		param_get(param_find("DPH_VER_MINOR"),    &dph_minor);
+		param_get(param_find("DPH_VER_VEHICLE"),  &dph_vehicle);
+		param_get(param_find("DPH_PFN_IMU_SW"),   &dph_imu_sw);
+		param_get(param_find("DPH_PFN_VEH_CFG"),  &dph_veh_cfg);
+		param_get(param_find("DPH_PFN_MOT_CFG"),  &dph_mot_cfg);
+		param_get(param_find("DPH_PFN_FILE_ST"),  &dph_file_st);
+
+		// Decode 4-byte big-endian ASCII packed INT32 into char[5]
+		auto unpack = [](int32_t v, char out[5]) {
+			out[0] = (v >> 24) & 0xFF;
+			out[1] = (v >> 16) & 0xFF;
+			out[2] = (v >>  8) & 0xFF;
+			out[3] = (v      ) & 0xFF;
+			out[4] = '\0';
+		};
+
+		char n1[5]      = {};
+		char n2[5]      = {};
+		char imu_sw[5]  = {};
+		char veh_cfg[5] = {};
+		char mot_cfg[5] = {};
+		char file_st[5] = {};
+
+		unpack(dph_name1,   n1);
+		unpack(dph_name2,   n2);
+		unpack(dph_imu_sw,  imu_sw);
+		unpack(dph_veh_cfg, veh_cfg);
+		unpack(dph_mot_cfg, mot_cfg);
+		unpack(dph_file_st, file_st);
+
+		PX4_INFO("DPH Prefix   : %s",           n1);
+		PX4_INFO("DPH Platform : %s",           n2);
+		PX4_INFO("DPH Version  : V%d.%d.%d",    (int)dph_major, (int)dph_minor, (int)dph_vehicle);
+		PX4_INFO("DPH IMU/SW   : %s",           imu_sw);
+		PX4_INFO("DPH Vehicle  : %s",           veh_cfg);
+		PX4_INFO("DPH Motor    : %s",           mot_cfg);
+		PX4_INFO("DPH Status   : %s",           file_st);
+	}
+	// -------------------------------------------------------------------------
+
 	while (!should_exit()) {
 
 		perf_begin(_loop_perf);

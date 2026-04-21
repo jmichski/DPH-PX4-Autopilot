@@ -3,15 +3,31 @@
  *
  * Airogistic Drone Performance Harness (DPH)
  * PX4 YAML parameter definitions for:
- *   - Parameter filename encoding (ASCII packed into INT32)
+ *   - Parameter filename platform encoding (ASCII packed INT32)
  *   - Build version tracking (V<Major>.<Minor>.<Vehicle>)
+ *   - Parameter filename config fields (IMU SW, Vehicle, Motor, Status)
  *
- * Filename encoding: 4 ASCII bytes packed big-endian into one INT32
- *   "dph_" = 0x6468705F
- *   "x500" = 0x78353030
+ * ── Filename convention ──────────────────────────────────────────────────
+ * airo_<imu_sw>_<platform>_<mot_cfg>_<veh_cfg>_<status>_V<n>_S<n>_v<M>_<m>_<v>.params
+ * Example: airo_PX4_x500_QUAD_STD_PRO_V2_S3_v1_0_0.params
  *
- * Version format: V<DPH_VER_MAJOR>.<DPH_VER_MINOR>.<DPH_VER_VEHICLE>
- *   Default: V1.0.0
+ * ── ASCII packing (4 bytes per INT32, big-endian, space-padded) ──────────
+ * "PX4 " = 0x50583420   "STD " = 0x53544420   "QUAD" = 0x51554144
+ * "ARDU" = 0x41524455   "TVTL" = 0x5456544C   "SING" = 0x53494E47
+ * "BTAF" = 0x42544146   "NVTL" = 0x4E56544C   "DUAL" = 0x4455414C
+ * "CLNF" = 0x434C4E46   "WVTL" = 0x5756544C   "HEX " = 0x48455820
+ * "OTHE" = 0x4F544845   "TNVT" = 0x544E5654   "OCTO" = 0x4F43544F
+ *                        "FWNG" = 0x46574E47   "2WHL" = 0x3257484C
+ *                        "COAX" = 0x434F4158   "3WHL" = 0x3357484C
+ *                        "ARVR" = 0x41525652   "4WHL" = 0x3457484C
+ *                        "TRVR" = 0x54525652
+ *
+ * ── File status ──────────────────────────────────────────────────────────
+ * "PRO " = 0x50524F20   Production — validated, flight-ready
+ * "TST " = 0x54535420   Test       — under evaluation
+ * "EXP " = 0x45585020   Experimental — do not use in flight ops
+ *
+ * ── PX4 param name limit: 15 visible chars (16 bytes incl. null) ─────────
  *
  ****************************************************************************/
 
@@ -19,27 +35,31 @@ module_name: dph_config
 
 parameters:
 
+  # ── Platform name (ASCII packed) ─────────────────────────────────────────
+
   - name: DPH_CFG_NAME1
     type: int32
-    default: 1684956255   # 0x6468705F = "dph_"
-    short_desc: DPH Config Filename Chunk 1 (chars 1-4)
+    default: 1634495520   # 0x61697220 = "air "  (prefix chunk 1)
+    short_desc: DPH Config Platform Name Chunk 1 (chars 1-4)
     long_desc: |
-      First 4 characters of the active .params filename packed as a
-      big-endian ASCII INT32. Default encodes "dph_" (0x6468705F).
-      Decode: int.to_bytes(4, 'big').decode('ascii').rstrip('\x00')
-      Update when switching parameter file sets.
+      First 4 characters of the vehicle platform identifier packed
+      as big-endian ASCII into a 32-bit integer.
+      Default encodes "air " (0x61697220).
+      Decode: int.to_bytes(4, 'big').decode('ascii').rstrip()
     group: DPH Config
 
   - name: DPH_CFG_NAME2
     type: int32
-    default: 2035048496   # 0x78353030 = "x500"
-    short_desc: DPH Config Filename Chunk 2 (chars 5-8)
+    default: 2035048496   # 0x78353030 = "x500"  (platform)
+    short_desc: DPH Config Platform Name Chunk 2 (chars 5-8)
     long_desc: |
-      Characters 5-8 of the active .params filename packed as a
-      big-endian ASCII INT32. Default encodes "x500" (0x78353030).
-      Decode: int.to_bytes(4, 'big').decode('ascii').rstrip('\x00')
-      Update when switching parameter file sets.
+      Characters 5-8 of the vehicle platform identifier packed as
+      big-endian ASCII into a 32-bit integer.
+      Default encodes "x500" (0x78353030).
+      Update when changing vehicle platform.
     group: DPH Config
+
+  # ── Version ───────────────────────────────────────────────────────────────
 
   - name: DPH_VER_MAJOR
     type: int32
@@ -60,9 +80,9 @@ parameters:
     max: 99
     short_desc: DPH Minor Version Number
     long_desc: |
-      Minor component of the DPH build version string
-      V<MAJOR>.<MINOR>.<VEHICLE>. Increment for new features or
-      config additions. Reset VEHICLE to 0 on minor bump.
+      Minor component of V<MAJOR>.<MINOR>.<VEHICLE>.
+      Increment for new features or config additions.
+      Reset VEHICLE to 0 on minor bump.
     group: DPH Config
 
   - name: DPH_VER_VEHICLE
@@ -75,4 +95,75 @@ parameters:
       Vehicle-specific build component of V<MAJOR>.<MINOR>.<VEHICLE>.
       Increment for vehicle-level config or tuning changes.
       Reset to 0 when MINOR is bumped.
+    group: DPH Config
+
+  # ── Parameter filename config fields (ASCII packed) ───────────────────────
+
+  - name: DPH_PFN_IMU_SW
+    type: int32
+    default: 1347769376   # 0x50583420 = "PX4 "
+    short_desc: DPH Param Filename IMU/Autopilot SW Type
+    long_desc: |
+      Autopilot firmware type encoded as 4-char ASCII packed INT32.
+      Space-pad values shorter than 4 characters.
+      Valid values (ASCII packed):
+        "PX4 " = 0x50583420  — PX4 Autopilot
+        "ARDU" = 0x41524455  — ArduPilot
+        "BTAF" = 0x42544146  — Betaflight
+        "CLNF" = 0x434C4E46  — Cleanflight
+        "OTHE" = 0x4F544845  — Other
+    group: DPH Config
+
+  - name: DPH_PFN_VEH_CFG
+    type: int32
+    default: 1398362144   # 0x53544420 = "STD "
+    short_desc: DPH Param Filename Vehicle Config Type
+    long_desc: |
+      Vehicle configuration type encoded as 4-char ASCII packed INT32.
+      Space-pad values shorter than 4 characters.
+      Valid values (ASCII packed):
+        "STD " = 0x53544420  — Standard multirotor
+        "TVTL" = 0x5456544C  — Tilt-wing VTOL
+        "NVTL" = 0x4E56544C  — Non-tilt VTOL
+        "WVTL" = 0x5756544C  — Wing VTOL
+        "TNVT" = 0x544E5654  — Tilt-non-tilt VTOL
+        "FWNG" = 0x46574E47  — Fixed wing
+        "COAX" = 0x434F4158  — Coaxial
+        "ARVR" = 0x41525652  — Aerial rover
+        "TRVR" = 0x54525652  — Terrestrial rover
+        "OTHE" = 0x4F544845  — Other
+    group: DPH Config
+
+  - name: DPH_PFN_MOT_CFG
+    type: int32
+    default: 1364283204   # 0x51554144 = "QUAD"
+    short_desc: DPH Param Filename Motor Config Type
+    long_desc: |
+      Motor/drive configuration type encoded as 4-char ASCII packed INT32.
+      Space-pad values shorter than 4 characters.
+      Valid values (ASCII packed):
+        "SING" = 0x53494E47  — Single motor
+        "DUAL" = 0x4455414C  — Dual motor
+        "QUAD" = 0x51554144  — Quadrotor
+        "HEX " = 0x48455820  — Hexarotor
+        "OCTO" = 0x4F43544F  — Octorotor
+        "2WHL" = 0x3257484C  — 2-wheel drive
+        "3WHL" = 0x3357484C  — 3-wheel drive
+        "4WHL" = 0x3457484C  — 4-wheel drive
+        "OTHE" = 0x4F544845  — Other
+    group: DPH Config
+
+  - name: DPH_PFN_FILE_ST
+    type: int32
+    default: 1347571488   # 0x50524F20 = "PRO "
+    short_desc: DPH Param Filename File Status Type
+    long_desc: |
+      Parameter file status/maturity level encoded as 4-char ASCII
+      packed INT32. Space-pad values shorter than 4 characters.
+      IMPORTANT: EXP and TST files must not be used in flight ops
+      without explicit review and approval.
+      Valid values (ASCII packed):
+        "PRO " = 0x50524F20  — Production: validated, flight-ready
+        "TST " = 0x54535420  — Test: under evaluation
+        "EXP " = 0x45585020  — Experimental: do not use in flight ops
     group: DPH Config

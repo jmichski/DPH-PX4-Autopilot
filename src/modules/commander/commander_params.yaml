@@ -853,24 +853,24 @@ parameters:
   definitions:
     DPH_CFG_NAME1:
       description:
-        short: DPH Config Filename Chunk 1 (chars 1-4)
+        short: DPH Prefix Identifier (chars 1-4, ASCII packed)
         long: |-
-          First 4 characters of the active .params filename packed as
-          big-endian ASCII into a 32-bit integer.
-          Default encodes "dph_" (0x6468705F = 1684956255).
-          Update when switching parameter file sets.
+          First 4 characters of the Airogistic filename prefix packed
+          as big-endian ASCII into a 32-bit integer.
+          Fixed value encodes "AIRO" (0x4149524F = 1095324239).
+          Decode: int.to_bytes(4,'big').decode('ascii').rstrip()
       type: int32
-      default: 1684956255
+      default: 1095324239
     DPH_CFG_NAME2:
       description:
-        short: DPH Config Filename Chunk 2 (chars 5-8)
+        short: DPH Vehicle Platform (chars 5-8, ASCII packed)
         long: |-
-          Characters 5-8 of the active .params filename packed as
-          big-endian ASCII into a 32-bit integer.
-          Default encodes "x500" (0x78353030 = 2035048496).
-          Update when switching parameter file sets.
+          Vehicle platform identifier packed as big-endian ASCII
+          into a 32-bit integer.
+          Default encodes "X500" (0x58353030 = 1479880752).
+          Update when changing vehicle platform.
       type: int32
-      default: 2035048496
+      default: 1479880752
     DPH_VER_MAJOR:
       description:
         short: DPH Major Version Number
@@ -903,3 +903,51 @@ parameters:
       default: 0
       min: 0
       max: 99
+    DPH_PFN_IMU_SW:
+      description:
+        short: DPH Param Filename IMU/Autopilot SW Type
+        long: |-
+          Autopilot firmware type as 4-char ASCII packed INT32.
+          Space-pad values shorter than 4 characters.
+          PX4 =0x50583420=1347957792  ARDU=0x41524455=1095910485
+          BTAF=0x42544146=1112817990  CLNF=0x434C4E46=1129074246
+          OTHE=0x4F544845=1330923589
+      type: int32
+      default: 1347957792
+    DPH_PFN_VEH_CFG:
+      description:
+        short: DPH Param Filename Vehicle Config Type
+        long: |-
+          Vehicle configuration type as 4-char ASCII packed INT32.
+          Space-pad values shorter than 4 characters.
+          STD =0x53544420=1398031392  TVTL=0x5456544C=1414943820
+          NVTL=0x4E56544C=1314280524  WVTL=0x5756544C=1465275468
+          TNVT=0x544E5654=1414420052  FWNG=0x46574E47=1180126791
+          COAX=0x434F4158=1129267544  ARVR=0x41525652=1095915090
+          TRVR=0x54525652=1414682194  OTHE=0x4F544845=1330923589
+      type: int32
+      default: 1398031392
+    DPH_PFN_MOT_CFG:
+      description:
+        short: DPH Param Filename Motor Config Type
+        long: |-
+          Motor/drive configuration type as 4-char ASCII packed INT32.
+          Space-pad values shorter than 4 characters.
+          SING=0x53494E47=1397313095  DUAL=0x4455414C=1146437964
+          QUAD=0x51554144=1364541764  HEX =0x48455820=1212504096
+          OCTO=0x4F43544F=1329812559  2WHL=0x3257484C=844580940
+          3WHL=0x3357484C=861358156   4WHL=0x3457484C=878135372
+          OTHE=0x4F544845=1330923589
+      type: int32
+      default: 1364541764
+    DPH_PFN_FILE_ST:
+      description:
+        short: DPH Param Filename File Status Type
+        long: |-
+          Parameter file maturity level as 4-char ASCII packed INT32.
+          EXP and TST must not be used in flight ops without review.
+          PRO =0x50524F20=1347571488  (Production, flight-ready)
+          TST =0x54535420=1414747168  (Test, under evaluation)
+          EXP =0x45585020=1163415584  (Experimental, no flight ops)
+      type: int32
+      default: 1347571488
