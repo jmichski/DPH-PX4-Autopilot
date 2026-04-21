@@ -849,3 +849,57 @@ parameters:
       max: 0.5
       decimal: 2
       increment: 0.01
+- group: DPH Config
+  definitions:
+    DPH_CFG_NAME1:
+      description:
+        short: DPH Config Filename Chunk 1 (chars 1-4)
+        long: |-
+          First 4 characters of the active .params filename packed as
+          big-endian ASCII into a 32-bit integer.
+          Default encodes "dph_" (0x6468705F = 1684956255).
+          Update when switching parameter file sets.
+      type: int32
+      default: 1684956255
+    DPH_CFG_NAME2:
+      description:
+        short: DPH Config Filename Chunk 2 (chars 5-8)
+        long: |-
+          Characters 5-8 of the active .params filename packed as
+          big-endian ASCII into a 32-bit integer.
+          Default encodes "x500" (0x78353030 = 2035048496).
+          Update when switching parameter file sets.
+      type: int32
+      default: 2035048496
+    DPH_VER_MAJOR:
+      description:
+        short: DPH Major Version Number
+        long: |-
+          Major component of V<MAJOR>.<MINOR>.<VEHICLE>.
+          Increment for breaking or architectural changes.
+          Reset MINOR and VEHICLE to 0.
+      type: int32
+      default: 1
+      min: 0
+      max: 99
+    DPH_VER_MINOR:
+      description:
+        short: DPH Minor Version Number
+        long: |-
+          Minor component of V<MAJOR>.<MINOR>.<VEHICLE>.
+          Increment for new features. Reset VEHICLE to 0.
+      type: int32
+      default: 0
+      min: 0
+      max: 99
+    DPH_VER_VEHICLE:
+      description:
+        short: DPH Vehicle Build Version
+        long: |-
+          Vehicle-specific component of V<MAJOR>.<MINOR>.<VEHICLE>.
+          Increment for vehicle-level config or tuning changes.
+          Reset to 0 when MINOR is bumped.
+      type: int32
+      default: 0
+      min: 0
+      max: 99

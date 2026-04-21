@@ -1,0 +1,78 @@
+/****************************************************************************
+ * dph_params.yaml
+ *
+ * Airogistic Drone Performance Harness (DPH)
+ * PX4 YAML parameter definitions for:
+ *   - Parameter filename encoding (ASCII packed into INT32)
+ *   - Build version tracking (V<Major>.<Minor>.<Vehicle>)
+ *
+ * Filename encoding: 4 ASCII bytes packed big-endian into one INT32
+ *   "dph_" = 0x6468705F
+ *   "x500" = 0x78353030
+ *
+ * Version format: V<DPH_VER_MAJOR>.<DPH_VER_MINOR>.<DPH_VER_VEHICLE>
+ *   Default: V1.0.0
+ *
+ ****************************************************************************/
+
+module_name: dph_config
+
+parameters:
+
+  - name: DPH_CFG_NAME1
+    type: int32
+    default: 1684956255   # 0x6468705F = "dph_"
+    short_desc: DPH Config Filename Chunk 1 (chars 1-4)
+    long_desc: |
+      First 4 characters of the active .params filename packed as a
+      big-endian ASCII INT32. Default encodes "dph_" (0x6468705F).
+      Decode: int.to_bytes(4, 'big').decode('ascii').rstrip('\x00')
+      Update when switching parameter file sets.
+    group: DPH Config
+
+  - name: DPH_CFG_NAME2
+    type: int32
+    default: 2035048496   # 0x78353030 = "x500"
+    short_desc: DPH Config Filename Chunk 2 (chars 5-8)
+    long_desc: |
+      Characters 5-8 of the active .params filename packed as a
+      big-endian ASCII INT32. Default encodes "x500" (0x78353030).
+      Decode: int.to_bytes(4, 'big').decode('ascii').rstrip('\x00')
+      Update when switching parameter file sets.
+    group: DPH Config
+
+  - name: DPH_VER_MAJOR
+    type: int32
+    default: 1
+    min: 0
+    max: 99
+    short_desc: DPH Major Version Number
+    long_desc: |
+      Major component of the DPH build version string
+      V<MAJOR>.<MINOR>.<VEHICLE>. Increment when making breaking
+      or architectural changes. Reset MINOR and VEHICLE to 0.
+    group: DPH Config
+
+  - name: DPH_VER_MINOR
+    type: int32
+    default: 0
+    min: 0
+    max: 99
+    short_desc: DPH Minor Version Number
+    long_desc: |
+      Minor component of the DPH build version string
+      V<MAJOR>.<MINOR>.<VEHICLE>. Increment for new features or
+      config additions. Reset VEHICLE to 0 on minor bump.
+    group: DPH Config
+
+  - name: DPH_VER_VEHICLE
+    type: int32
+    default: 0
+    min: 0
+    max: 99
+    short_desc: DPH Vehicle Build Version
+    long_desc: |
+      Vehicle-specific build component of V<MAJOR>.<MINOR>.<VEHICLE>.
+      Increment for vehicle-level config or tuning changes.
+      Reset to 0 when MINOR is bumped.
+    group: DPH Config
